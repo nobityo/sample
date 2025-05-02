@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.5.0/decimal.min.js"></script>
+<script>
+var data = [{名: "殷 手尺", 寸: "50/(8*3)", 尺: 8, 歩: 2, 里: 100, 長里: 300},
+{名: "殷 足尺", 寸: "50/(8*2)", 尺: 8, 歩: 3, 里: 100, 長里: 300},
+{名: "殷 尺", 寸: "173.25/(8*10)", 尺: 8, 歩: 8, 里: 50, 長里: 300},
+{名: "周 古尺", 寸: "185/(8*10)", 尺: 8, 歩: 8, 里: 50, 長里: 300},
+{名: "春秋 尺", 寸: "193/(8*10)", 尺: 8, 歩: 8, 里: 50, 長里: 300},
+{名: "周 尺", 寸: "180/(10*8)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "秦漢 尺", 寸: "185/(10*8)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "魏晋 尺", 寸: "193/(10*8)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "東晋 尺", 寸: 2.45, 尺: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "隋 尺", 寸: 2.96, 尺: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "唐 小尺", 寸: "180/(10*6)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "唐 大尺", 寸: "180/(10*5)", 尺: 10, 歩: 5, 里: 50, 長里: 360},
+//{名: "古韓尺", 寸: "160/(10*6)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "江戸 尺", 寸: "533.5/180", 尺: 10, 歩: 6, 里: 50, 長里: 300},
+];
+
+var shu = [{s: '〇', n: 0}, {s: '一', n: 1}, {s: '二', n: 2}, {s: '三', n: 3}, {s: '四', n: 4},
+		{s: '五', n: 5}, {s: '六', n: 6}, {s: '七', n: 7}, {s: '八', n: 8}, {s: '九', n: 9}]; //数
+	hen = [{s: '十', n: 10}, {s: '百', n: 100}, {s: '千', n: 1000},
+			{s: '萬', n: 0}, {s: '万', n: 0}, {s: '億', n: 0}, {s: '餘', n: 0}, {s: '余', n: 0},]; //桁
+
+var digit = new Decimal(10).pow(5);
+var li = null, bu, chi, cun, fen, lin, hao, zha;
+
+function r(v) { //round
+	return v.mul(digit).round().div(digit);
+}
+function rd(v) { //rounddown
+	return v.mul(digit).floor().div(digit);
+}
+
+function setLog() {
+	function getValue(t, m) {
+		var v;
+		try {
+			v = eval(t.value);
+		} catch(e) {
+			log.value = m +"の入力が誤り: "+ e.message;
+			return 0;
+		}
+		if(!v || v <= 0) {
+			log.value = m +"の入力が誤り: "+ v;
+			return 0;
+		}
+		return new Decimal(v);
+	}
+	var size, num, vbu, vil;
+	li = null;
+	if((cun_ = getValue(cun_size, "寸")/*寸*/) == 0 || (num = getValue(chi_size, "尺")/*進数*/) == 0 ||
+		(vbu = getValue(bu_size, "歩")) == 0 || (vil = getValue(li_size, "里")) == 0) {
+		items.value = -1;
+		return;
+	}
+	var fen_ = cun_.div(num)/*分*/, lin_ = fen_.div(num)/*厘*/, 	hao_ = lin_.div(num)/*毫*/,
+		chi_ = cun_.mul(num)/*尺*/, bu_ = chi_.mul(vbu)/*歩*/, li_ = bu_.mul(vil)/*里*/,
+		zha_ = chi_.mul(num)/*丈*/;
+
+	li = r(li_); bu = r(bu_); chi = r(chi_); cun = r(cun_); fen = r(fen_); lin = r(lin_); hao = r(hao_); zha = r(zha_);
+	
+	var i = 0;
+	for(let item of data) {
+		if(cun_ == eval(item.寸) && num == eval(item.尺) && vbu == eval(item.歩) &&
+		(chang.checked && vil == eval(item.長里) || vil == eval(item.里)))
+			break;
+		++i;
+	}
+	if(data.length == i)
+		items.value = -1;
+	else if(items.value != i)
+		items.value = i;
+
+	log.value = "寸: "+ rd(cun) +"cm, 尺: "+ rd(chi) +"cm, 歩: "+ rd(bu) +"cm, 里: "+ rd(li.div(100)) +"m";
+
+	li_autoChange();
+	meter_autoChange();
+}
+
+function li_autoChange() {
+	if(li_auto.checked) {
+		if(li_input.value != null)
+			li_click();
+	}
+}
+
+function meter_autoChange() {
+	if(meter_auto.checked)
+		if(meter_input.value != null)
+			meter_click();
+}
+
+function setItem(item) {
+	cun_size.value = item.寸;
+	chi_size.value = item.尺;
+	bu_size.value = item.歩;
+	if(chang.checked)
+		li_size.value = item.長里;
+	else
+		li_size.value = item.里;
+	setLog();
+}
+
+function itemsChange() {
+	const index = items.value;
+	if(0 <= index) {
+		li_log.value = "";
+		meter_log.value = "";
+		setItem(data[index]);
+	}
+}
+
+function changClick() {
+	const index = items.value;
+	if(0 <= index) {
+		if(chang.checked)
+			li_size.value = data[index].長里;
+		else
+			li_size.value = data[index].里;
+		setLog();
+	} else {
+		let v = eval(bu_size.value);
+		if(0 < v) {
+			if(chang.checked)
+				li_size.value = "1800/"+ v;
+			else
+				li_size.value = "300/"+ v;
+			setLog();
+		}		
+	}
+}
+
+function findInt(str, s) {
+	var i = s;
+	for(let c = str.length; i < c; ++i) {
+		let s = str[i];
+		if(s < '0' || '9' < s)
+			break;
+	}
+	return i - s;
+}
+
+function findShu(str, s) {
+	var i = s, v = 0, n = 0, th = 0/*万の位*/, hm = 0/*億の位*/;
+	for(; str[i] != null; ++i) {
+		let s = str[i], b = false;
+		for(let h of shu) {
+			if(s == h.s) {
+				n = h.n;
+				b = true;
+				break;
+			}
+		}
+		if(b == false) {
+			for(let h of hen) {
+				if(s == h.s) {
+					if(s == '萬' || s == '万') {
+						v += n;
+						th = (v == 0 ? 1 : v);
+						v = 0;
+					} else if(s == '億') {
+						v += n;
+						hm = (v == 0 ? 1 : v);
+						v = 0;
+					} else
+						v += (n == 0 ? 1 : n) * h.n;
+					n = 0;
+					b = true;
+					break;
+				}
+			}
+		}
+		if(b == false)
+			break;
+	}
+	var aaa = Decimal.add(v, n);
+	if(n != 0)
+		v += n;
+	if(th != 0)
+		v += th * 10000;
+	if(hm != 0)
+		v += hm * 100000000
+	return [i - s, new Decimal(v)];
+}
+
+function findFloat(str, s) {
+	var i = s, b = false;
+	for(; str[i] != null; ++i) {
+		if(str[i] < '0' || '9' < str[i]) {
+			if(str[i] == '.') {
+				if(b == true)
+					return 0;
+				b = true;
+			} else
+				break;
+		}
+	}
+	return i - s;
+}
+
+function findStr(str, s) {
+	var i = s;
+	for(; str[i] != null; ++i) {
+		if('0' <= str[i] && str[i] <= '9')
+			break;
+	}
+	return i - s;
+}
+
+function li_value() {
+	var str = li_input.value, v = new Decimal(0), isB = false;
+	for(let i = 0, c = str.length; i < c;) {
+		let n, a;
+		if((n = findInt(str, i)) == 0) {
+			if(([n, a] = findShu(str, i)) == 0) {
+				console.log("li_value(): n = findShu(): "+ n);
+				return 0;
+			}
+		} else
+			a = new Decimal(str.substr(i, n));
+		i += n;
+		let b = str.substr(i, 1);
+		if(b != "") {
+			if(b == '里')
+				v = v.add(a.mul(li));
+			else if(b == '歩')
+				v = v.add(a.mul(bu));
+			else if(b == '丈')
+				v = v.add(a.mul(zha));
+			else if(b == '尺')
+				v = v.add(a.mul(chi));
+			else if(b == '寸')
+				v = v.add(a.mul(cun));
+			else if(b == '分')
+				v = v.add(a.mul(fen));
+			else if(b == '厘')
+				v = v.add(a.mul(lin));
+			else if(b == '毫' || b == '毛')
+				v = v.add(a.mul(hao));
+			else {
+				console.log("li_value(): str.substr("+ i +", "+ 1 +") = "+ b);
+				return 0;
+			}
+			isB = true;
+		} else {
+			if(isB == true) {
+				console.log("li_value(): isB == "+ isB);
+				return 0;
+			}
+			v = a.mul(li);
+			break;
+		}
+		i += 1;
+	}
+	return v.div(100);
+}
+
+function li_click() {
+	if(li == null) {
+		log.value += "まったくダメです";
+		return;
+	}
+	var v = li_value();
+	if(v == 0) {
+		li_log.value += "ダメです";
+		return;
+	}
+	if(v.e >= 3)
+		v = v.div(1000) +'km';
+	else if(v.e <= 0)
+		v = v.mul(100) +'cm';
+	else
+		v = v +'m';
+	li_log.value = v;
+}
+
+function meter_value() {
+	var str = meter_input.value, i = 0, n;
+	if((n = findFloat(str, i)) == 0) {
+		console.log("meter_value(): n = findFloat(): "+ n);
+		return 0;
+	}
+	var a = new Decimal(str.substr(i, n));
+	i += n;
+	n = findStr(str, i);
+	if(0 < n) {
+		let b = str.substr(i, n);
+		if(b == 'km')
+			a = a.mul(100000);
+		else if(b == 'm')
+			a = a.mul(100);
+		else if(b == 'cm')
+			;
+		else {
+			console.log("meter_value(): str.substr("+ i +", "+ n +") = "+ b);
+			return 0;
+		}
+		return a;
+	}
+	return a.mul(100);
+}
+
+function meter_click() {
+	if(li == null) {
+		log.value += "まったくダメです";
+		return;
+	}
+	var v = meter_value();
+	if(v == 0) {
+		meter_log.value += "ダメです";
+		return;
+	}
+	var len = 0;
+	for (let e of document.getElementsByName('len')){
+		if (e.checked) {
+			len = e.value;
+			break;
+		}
+	}
+	var li_ = 0, bu_ = 0, zha_ = 0;
+	if(len == 0 || len == 1) {
+		if(len == 0) {
+			li_ = v.div(li).floor();
+			v = v.sub((li_.mul(li)));
+		}
+		bu_ = v.div(bu).floor();
+		v = v.sub((bu_.mul(bu)));
+	} else if(len == 2) {
+		zha_ = v.div(zha).floor();
+		v = v.sub((zha_.mul(zha)));
+	}
+	var chi_ = v.div(chi).floor();
+	v = v.sub((chi_.mul(chi)));
+	var cun_ = v.div(cun).floor();
+	v = v.sub((cun_.mul(cun)));
+	var fen_ = v.div(fen).floor();
+	v = v.sub((fen_.mul(fen)));
+	var lin_ = v.div(lin).floor();
+	v = v.sub((lin_.mul(lin)));
+	var hao_ = v.div(hao).floor();
+	var str = "";
+	if(len == 0 || len == 1) {
+		if(len == 0) {
+			if(li_ != 0)
+				str += li_ +'里';
+		}
+		if(bu_ != 0)
+			str += bu_ +'歩';
+	} else if(len == 2) {
+		if(zha_ != 0)
+			str += zha_ +'丈';
+	}
+	if(chi_ != 0)
+		str += chi_ +'尺';
+	if(cun_ != 0)
+		str += cun_ +'寸';
+	if(fen_ != 0)
+		str += fen_ +'分';
+	if(lin_ != 0)
+		str += lin_ +'厘';
+	if(hao_ != 0)
+		str += hao_ +'毫';
+	meter_log.value = str;
+}
+
+function li_keydown(e) {
+	if (e.key === "Enter")
+		li_click();
+	return false;
+}
+
+function meter_keydown(e) {
+	if (e.key === "Enter")
+		meter_click();
+	return false;
+}
+
+function lenChange() {
+	meter_click();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	var i = 0;
+	for(let item of data) {
+		var opt = document.createElement("option");
+		opt.text = item.名;
+		opt.value = i++;
+		items.appendChild(opt);
+	}
+});
+</script>
+<style>
+body {
+min-width: 720px;
+}
+body, input, button, select {
+font-size: 16px;
+}
+input, button, select, th, td {
+line-height: 1.6;
+}
+input[type="text"], select {
+height: 1.6em;
+box-sizing: content-box;
+padding: 1px 2px;
+}
+input[type="radio"], input[type="checkbox"] {
+width: 1em;
+height: 1em;
+margin: 0;
+vertical-align: middle;
+}
+h1 {
+font-size: 1.8em;
+}
+h2 {
+font-size: 1.5em;
+}
+label + label {
+margin-left: 10px;
+}
+div + div {
+margin-top: 5px;
+}
+label, table {
+white-space: nowrap;
+}
+sup {
+vertical-align: text-top;
+}
+table {
+border-collapse: collapse;
+border-color: #a0a;
+}
+fieldset {
+display: inline-block;
+margin-left: 7.5em;
+padding: 0;
+border: none;
+}
+footer {
+margin-top: 10px;
+text-align: center
+}
+</style>
+</head>
+<body>
+<header>
+<h1>里・メートル 変換</h1>
+</header>
+<main>
+<article>
+<h2>入力するんだ</h2>
+<div>
+<label for="items">選ぶと→<select id="items" onchange="itemsChange()"><option value="-1"></option></select>↓下に入る</label>
+<label for="chang">長里 : <input type="checkbox" id="chang" onclick="changClick()"></label>
+</div>
+<div>
+<label for="cun_size">寸 : <input type="text" id="cun_size" size="8em" onchange="setLog();">cm</label>
+<label for="chi_size">尺 : <input type="text" id="chi_size" size="3em" onchange="setLog();">寸</label>
+<label for="bu_size">歩 : <input type="text" id="bu_size" size="3em" onchange="setLog();">尺</label>
+<label for="li_size">里 : <input type="text" id="li_size" size="3em" onchange="setLog();">歩</label>
+</div>
+<div><label for="log">ログ : <input type="text" id="log" size="60em"></label></div>
+</article>
+<article>
+<h2>変換するんだ</h2>
+<div>単位に里歩尺寸分↓を合わせられる<br>
+<label for="li_input">里 : <input type="text" id="li_input" onkeydown="li_keydown(event)" value="萬二千餘里"><button onclick="li_click()">変換</button></label>
+<label for="li_log">結果→<input type="text" id="li_log"></input></label><label for="li_auto">自動 : <input type="checkbox" id="li_auto" onchange="li_autoChange()">←入力で変換</label>
+</div>
+<div>
+<label for="meter_input">ｍ : <input type="text" id="meter_input" onkeydown="meter_keydown(event)"><button onclick="meter_click()">変換</button></label>
+<label for="meter_log">結果→<input type="text" id="meter_log"></input></label><label for="meter_auto">自動 : <input type="checkbox" id="meter_auto" onchange="meter_autoChange()"></label>
+<br>単位にkm/m/cm↑をいずれか
+<fieldset onchange="lenChange()" style="display: inline-block;margin-left: 7.5em;padding: 0;border:none;">
+↑ : <label for="len0"><input type="radio" name="len" id="len0" value="0" checked>里</label><label for="len1"><input type="radio" name="len" id="len1" value="1">歩</label><label for="len2"><input type="radio" name="len" id="len2" value="2">丈</label><label for="len3"><input type="radio" name="len" id="len3" value="3">尺</label>
+</fieldset>
+</div>
+</div>
+</article>
+<article>
+<h2>メモ</h2>
+<table id="memo" border="1">
+<thead>
+<tr><th></th><th>寸cm</th><th>尺cm</th><th>歩cm</th><th>里m</th><th>長里m</th><th>m<sup>2</sup></th><th></th></tr>
+</thead>
+<tbody>
+<tr><th>殷 手尺</th><td>2.0833</td><td>16.6666(8寸)</td><td>33.3333(2尺)</td><td></td><td></td><td></td><td></td></tr>
+<tr><th>殷 足歩</th><td>3.125</td><td>25(8寸)</td><td>75(3尺)</td><td>75(100跬)</td><td></td><td></td><td></td></tr>
+<tr><th>周 古尺</th><td>2.3125</td><td>18.5(8寸)</td><td>148(8尺)</td><td>74(50歩)</td><td>444(300歩)</td><td>2.1904</td><td>前11〜前9世紀</td></tr>
+<tr><th>春秋 尺</th><td>2.4125</td><td>19.3(8寸)</td><td>154.4(8尺)</td><td>77.2(50歩)</td><td>463.2(300歩)</td><td>2.383936</td><td>前8～前5世紀</td></tr>
+<tr><th>周 尺</th><td>2.25</td><td>22.5(10寸)</td><td>135(6尺)</td><td>67.5(50歩)</td><td>405(300歩)</td><td>1.8225</td><td>前?～前351年</td></tr>
+<tr><th>秦漢 尺</th><td>2.3125</td><td>23.125(10寸)</td><td>138.75(6尺)</td><td>69.375(50歩)</td><td>416.25(300歩)</td><td>1.9251</td><td>前350年、商鞅変法</td></tr>
+<tr><th>魏晋 尺</th><td>2.4125</td><td>24.125(10寸)</td><td>144.75(6尺)</td><td>72.375(50歩)</td><td>434.25(300歩)</td><td>2.095256</td><td></td></tr>
+<tr><th>東晋 尺</th><td>2.45</td><td>24.5(10寸)</td><td>147(6尺)</td><td>73.5(50歩)</td><td>441(300歩)</td><td></td><td></td></tr>
+<tr><th>隋 尺</th><td>2.96</td><td>29.6(10寸)</td><td>177.6(6尺)</td><td>88.8(50歩)</td><td>532.8(300歩)</td><td></td><td></td></tr>
+<tr><th>唐 小尺</th><td>3</td><td>30(10寸)</td><td>180(6尺)</td><td>90(50歩)</td><td>540(300歩)</td><td></td><td></td></tr>
+<tr><th>唐 大尺</th><td>3.6</td><td>36(10寸)</td><td>180(5尺)</td><td>90(50歩)</td><td>648(360歩)</td><td></td><td>武徳7年、624年</td></tr>
+</tbody>
+</table>
+<ul>
+<li>ひと足を跬(き)。ふた足を歩(ぶ)。1跬は3尺。1歩は6尺。100跬で1里。</li>
+<li>春秋期の歩は8尺、1畝(ほ・む)は100歩、1里は300歩。</li>
+<li>漢尺の6尺4寸は148cmで、周古尺の8尺と同じ。</li><!--周では8寸尺の8尺を1歩としていた。10寸尺の6尺4寸にあたる。-->
+<li>漢尺の8寸は18.5cmで、周古尺の1尺と同じ。</li><!--漢代の辞書『説文解字』によれば「周の1尺は8寸程度」-->
+<!--魏正始弩尺24.3cm-->
+<!--岡山藩の和意谷墓所造営の際は、和尺の六寸五分（約19.7cm）、井田では六寸四分（約19.4cm）を周尺一尺としたようです。-->
+<!--『孟子』巻５、滕文公篇「方里にして井、井は九百畝、其の中を公田と為す。八家は皆な百畝を私し、同に公田に養ひ、公事畢りて然る後に敢て私事を治す。」-->
+</ul>
+</article>
+<article>
+<h2>作成のメモ</h2>
+最初、周の表8尺180cmや、表8尺185cmを元に尺を出すツールを作り始めた。メートル変換する機能を付けて、漢数字にも対応した。<br>
+魏尺はとりあえず193cmとし、春秋尺も同じとした。周古尺は漢尺との関係により185cmとした。<br>
+ついでに手尺足尺を加えて、殷尺は歩138.6cmとするのを元にした。<br>
+またついでに、唐尺は180cmで加えて、東晋の尺24.5cmと隋の尺29.6cmも加えた。<br>
+寸の計算式にある(8*10)とは、8は「8寸で1尺」、10は「10尺表」。(8*10)と逆なのは「10寸で1尺」「8尺表」となる。<br>
+</article>
+</main>
+<footer>
+<span>Copyright 2025 のびちょ</span>
+</footer>
+</body>
+</html>
