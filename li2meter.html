@@ -1,45 +1,66 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<meta charset="utf-8">
 <title>里・メートル 変換</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.5.0/decimal.min.js"></script>
+<!--<script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.5.0/decimal.min.js"></script>-->
+<script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/14.2.1/math.min.js"></script>
+<!--
+https://cdnjs.com/libraries/decimal.js
+https://cdnjs.com/libraries/mathjs
+-->
 <script>
-var data = [{名: "殷 手尺", 寸: "50/(8*3)", 尺: 8, 歩: 2, 里: 100, 長里: 300},
-{名: "殷 足尺", 寸: "50/(8*2)", 尺: 8, 歩: 3, 里: 100, 長里: 300},
-{名: "殷 尺", 寸: "173.25/(8*10)", 尺: 8, 歩: 8, 里: 50, 長里: 300},
-{名: "周 古尺", 寸: "185/(8*10)", 尺: 8, 歩: 8, 里: 50, 長里: 300},
-{名: "春秋 尺", 寸: "193/(8*10)", 尺: 8, 歩: 8, 里: 50, 長里: 300},
-{名: "周 尺", 寸: "180/(10*8)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
-{名: "秦漢 尺", 寸: "185/(10*8)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
-{名: "魏晋 尺", 寸: "193/(10*8)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
-{名: "東晋 尺", 寸: 2.45, 尺: 10, 歩: 6, 里: 50, 長里: 300},
-{名: "隋 尺", 寸: 2.96, 尺: 10, 歩: 6, 里: 50, 長里: 300},
-{名: "唐 小尺", 寸: "180/(10*6)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
-{名: "唐 大尺", 寸: "180/(10*5)", 尺: 10, 歩: 5, 里: 50, 長里: 360},
-//{名: "古韓尺", 寸: "160/(10*6)", 尺: 10, 歩: 6, 里: 50, 長里: 300},
-{名: "江戸 尺", 寸: "533.5/180", 尺: 10, 歩: 6, 里: 50, 長里: 300},
-];
+var data = [{名: "殷 手尺", 尺: "500/3*0.1", 寸: 8, 歩: 2, 里: 100, 長里: 300},
+{名: "殷 足尺", 尺: "500/3*0.45/3", 寸: 8, 歩: 3, 里: 100, 長里: 300},
+{名: "殷 尺", 尺: "173.25/10", 寸: 8, 歩: 8, 里: 50, 長里: 300},
+{名: "周 古尺", 尺: "184.8/10", 寸: 8, 歩: 8, 里: 50, 長里: 300},
+{名: "春秋 尺", 尺: "193/10", 寸: 8, 歩: 8, 里: 50, 長里: 300},
+{名: "周 尺", 尺: "180/8", 寸: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "秦漢 尺", 尺: "184.8/8", 寸: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "魏晋 尺", 尺: "193.5/8", 寸: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "東晋 尺", 尺: "196/8", 寸: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "隋 尺", 尺: "236.8/8", 寸: 10, 歩: 6, 里: 50, 長里: 300},
+//{名: "唐 小尺", 尺: "200/8", 寸: 10, 歩: 6, 里: 50, 長里: 300},
+{名: "唐 大尺", 尺: "200*1.2/8", 寸: 10, 歩: 5, 里: 50, 長里: 360},
+//{名: "江戸 尺", 尺: "533.5/18", 寸: 10, 歩: 6, 里: 50, 長里: 300},
+//{名: "日本 尺", 尺: "100/3.3", 寸: 10, 歩: 6, 里: 60, 長里: "60*36"},
+],
+shu = [{s: '〇', n: 0}, {s: '一', n: 1}, {s: '二', n: 2}, {s: '三', n: 3}, {s: '四', n: 4},
+	{s: '五', n: 5}, {s: '六', n: 6}, {s: '七', n: 7}, {s: '八', n: 8}, {s: '九', n: 9}], //数
+hen = [{s: '十', n: 10}, {s: '百', n: 100}, {s: '千', n: 1000},
+	{s: '萬', n: 0}, {s: '万', n: 0}, {s: '億', n: 0}, {s: '餘', n: 0}, {s: '余', n: 0},], //桁
+errMsg = ["ダメです", "いけません", "よしなさい", "なにをしたいの", "しつこい", "いいかげんにして"],
+li = null, bu, chi, cun, fen, lin, hao, si, zha, xun;
 
-var shu = [{s: '〇', n: 0}, {s: '一', n: 1}, {s: '二', n: 2}, {s: '三', n: 3}, {s: '四', n: 4},
-		{s: '五', n: 5}, {s: '六', n: 6}, {s: '七', n: 7}, {s: '八', n: 8}, {s: '九', n: 9}]; //数
-	hen = [{s: '十', n: 10}, {s: '百', n: 100}, {s: '千', n: 1000},
-			{s: '萬', n: 0}, {s: '万', n: 0}, {s: '億', n: 0}, {s: '餘', n: 0}, {s: '余', n: 0},]; //桁
+document.addEventListener("DOMContentLoaded", () => {
+	var i = 0;
+	for(let item of data) {
+		var opt = document.createElement("option");
+		opt.text = item.名;
+		opt.value = i++;
+		items.appendChild(opt);
+	}
+});
 
-var digit = new Decimal(10).pow(5);
-var li = null, bu, chi, cun, fen, lin, hao, zha;
-
-function r(v) { //round
-	return v.mul(digit).round().div(digit);
+//Decimal.set({ precision: 20 });
+math.config({ number: 'BigNumber', precision: 20 });
+//console.log(Decimal.precision)
+//console.log(math.config())
+function r(v) {
+	return math.round(v, 12);
 }
-function rd(v) { //rounddown
-	return v.mul(digit).floor().div(digit);
+function rd(v) {
+	return math.floor(v, 6);
+}
+function r_li(v, a) {
+	return math.ceil(v, a);
 }
 
 function setLog() {
 	function getValue(t, m) {
 		var v;
 		try {
-			v = eval(t.value);
+			v = math.evaluate(t.value);
 		} catch(e) {
 			log.value = m +"の入力が誤り: "+ e.message;
 			return 0;
@@ -48,25 +69,37 @@ function setLog() {
 			log.value = m +"の入力が誤り: "+ v;
 			return 0;
 		}
-		return new Decimal(v);
+		return v;
 	}
-	var size, num, vbu, vil;
+
+	var chi_, num, vbu, vil;
 	li = null;
-	if((cun_ = getValue(cun_size, "寸")/*寸*/) == 0 || (num = getValue(chi_size, "尺")/*進数*/) == 0 ||
-		(vbu = getValue(bu_size, "歩")) == 0 || (vil = getValue(li_size, "里")) == 0) {
+
+	chi_ = getValue(chi_size, "尺");
+	num = getValue(cun_size, "寸");
+	vbu = getValue(bu_size, "歩");
+	vil = getValue(li_size, "里");
+	if(num == 0 || chi_ == 0 || vbu == 0 || vil == 0) {
 		items.value = -1;
 		return;
 	}
-	var fen_ = cun_.div(num)/*分*/, lin_ = fen_.div(num)/*厘*/, 	hao_ = lin_.div(num)/*毫*/,
-		chi_ = cun_.mul(num)/*尺*/, bu_ = chi_.mul(vbu)/*歩*/, li_ = bu_.mul(vil)/*里*/,
-		zha_ = chi_.mul(num)/*丈*/;
 
-	li = r(li_); bu = r(bu_); chi = r(chi_); cun = r(cun_); fen = r(fen_); lin = r(lin_); hao = r(hao_); zha = r(zha_);
-	
+	var cun_ = chi_.div(num)/*寸*/, fen_ = cun_.div(num)/*分*/, lin_ = fen_.div(num)/*厘*/,
+		hao_ = lin_.div(num)/*毛*/, si_ = hao_.div(num)/*糸*/,
+		bu_ = chi_.mul(vbu)/*歩*/;
+
+	li = r(bu_.mul(vil))/*里*/; bu = r(bu_)/*歩*/; chi = r(chi_)/*尺*/; cun = r(cun_)/*寸*/;
+	fen = r(fen_)/*分*/; lin = r(lin_)/*厘*/; hao = r(hao_)/*毛*/, si = r(si_)/*糸*/;
+	zha = r(chi_.mul(10))/*丈*/, xun = r(chi_.mul(8))/*尋*/;
+
 	var i = 0;
 	for(let item of data) {
-		if(cun_ == eval(item.寸) && num == eval(item.尺) && vbu == eval(item.歩) &&
-		(chang.checked && vil == eval(item.長里) || vil == eval(item.里)))
+		if((typeof(item.寸) === "string" ? num.equals(math.evaluate(item.寸)) : num.equals(item.寸)) &&
+		(typeof(item.尺) === "string" ? chi_.equals(math.evaluate(item.尺)) : chi_.equals(item.尺)) &&
+		(typeof(item.歩) === "string" ? vbu.equals(math.evaluate(item.歩)) : vbu.equals(item.歩)) &&
+		(chang.checked ?
+		(typeof(item.長里) === "string" ? vil.equals(math.evaluate(item.長里)) : vil.equals(item.長里)) :
+		(typeof(item.里) === "string" ? vil.equals(math.evaluate(item.里)) : vil.equals(item.里))))
 			break;
 		++i;
 	}
@@ -75,9 +108,10 @@ function setLog() {
 	else if(items.value != i)
 		items.value = i;
 
-	log.value = "寸: "+ rd(cun) +"cm, 尺: "+ rd(chi) +"cm, 歩: "+ rd(bu) +"cm, 里: "+ rd(li.div(100)) +"m";
-
+	log.value = //"毛: "+ hao +"cm, 厘: "+ lin　+"cm, 分: "+ fen +"cm, "+
+		"寸: "+ rd(cun) +"cm, 尺: "+ rd(chi) +"cm, 歩: "+ rd(bu) +"cm, 里: "+ rd(li.div(100)) +"m";
 	li_autoChange();
+	//meter_input.value = li_log.value;
 	meter_autoChange();
 }
 
@@ -123,14 +157,11 @@ function changClick() {
 			li_size.value = data[index].里;
 		setLog();
 	} else {
-		let v = eval(bu_size.value);
-		if(0 < v) {
-			if(chang.checked)
-				li_size.value = "1800/"+ v;
-			else
-				li_size.value = "300/"+ v;
-			setLog();
-		}		
+		if(chang.checked)
+			li_size.value = "300";
+		else
+			li_size.value = "50";
+		setLog();
 	}
 }
 
@@ -177,14 +208,14 @@ function findShu(str, s) {
 		if(b == false)
 			break;
 	}
-	var aaa = Decimal.add(v, n);
-	if(n != 0)
-		v += n;
-	if(th != 0)
-		v += th * 10000;
 	if(hm != 0)
 		v += hm * 100000000
-	return [i - s, new Decimal(v)];
+	if(th != 0)
+		v += th * 10000;
+	if(n != 0)
+		v += n;
+
+	return [i - s, math.bignumber(v)];
 }
 
 function findFloat(str, s) {
@@ -212,7 +243,7 @@ function findStr(str, s) {
 }
 
 function li_value() {
-	var str = li_input.value, v = new Decimal(0), isB = false;
+	var str = li_input.value, v = math.bignumber(0), isB = false;
 	for(let i = 0, c = str.length; i < c;) {
 		let n, a;
 		if((n = findInt(str, i)) == 0) {
@@ -221,7 +252,7 @@ function li_value() {
 				return 0;
 			}
 		} else
-			a = new Decimal(str.substr(i, n));
+			a = math.bignumber(str.substr(i, n));
 		i += n;
 		let b = str.substr(i, 1);
 		if(b != "") {
@@ -231,16 +262,20 @@ function li_value() {
 				v = v.add(a.mul(bu));
 			else if(b == '丈')
 				v = v.add(a.mul(zha));
+			else if(b == '尋')
+				v = v.add(a.mul(xun));
 			else if(b == '尺')
 				v = v.add(a.mul(chi));
 			else if(b == '寸')
 				v = v.add(a.mul(cun));
 			else if(b == '分')
 				v = v.add(a.mul(fen));
-			else if(b == '厘')
+			else if(b == '釐' || b == '厘')
 				v = v.add(a.mul(lin));
 			else if(b == '毫' || b == '毛')
 				v = v.add(a.mul(hao));
+			else if(b == '絲' || b == '糸')
+				v = v.add(a.mul(si));
 			else {
 				console.log("li_value(): str.substr("+ i +", "+ 1 +") = "+ b);
 				return 0;
@@ -256,62 +291,64 @@ function li_value() {
 		}
 		i += 1;
 	}
-	return v.div(100);
+	return v;
+}
+
+function errLog(log) {
+	var errNo = Number(log.dataset.errNo || 0);
+	log.value = errMsg[errNo];
+	log.dataset.errNo = errNo < 5 ? errNo + 1 : 0;
 }
 
 function li_click() {
 	if(li == null) {
-		log.value += "まったくダメです";
+		errLog(log);
 		return;
 	}
-	var v = li_value();
+	var v = li_value(), s;
 	if(v == 0) {
-		li_log.value += "ダメです";
+		errLog(li_log);
 		return;
 	}
-	if(v.e >= 3)
-		v = v.div(1000) +'km';
-	else if(v.e <= 0)
-		v = v.mul(100) +'cm';
+	if(v.e >= 5)
+		v = v.div(100000), a = 13, s = 'km';
+	else if(v.e <= 2)
+		v = v, a = 8, s = 'cm';
 	else
-		v = v +'m';
-	li_log.value = v;
+		v = v.div(100), a = 10, s = 'm';
+	li_log.value = r_li(v, a) + s;
 }
 
 function meter_value() {
-	var str = meter_input.value, i = 0, n;
-	if((n = findFloat(str, i)) == 0) {
-		console.log("meter_value(): n = findFloat(): "+ n);
+	var v;
+	try {
+		 v = math.evaluate(meter_input.value);
+	} catch(e) {
+		meter_log.value = e.message;
+		return -1;
+	}
+	if(v.type == "Unit") {
+		v = v.value;
+	} else if(v.type != "BigNumber"){
 		return 0;
 	}
-	var a = new Decimal(str.substr(i, n));
-	i += n;
-	n = findStr(str, i);
-	if(0 < n) {
-		let b = str.substr(i, n);
-		if(b == 'km')
-			a = a.mul(100000);
-		else if(b == 'm')
-			a = a.mul(100);
-		else if(b == 'cm')
-			;
-		else {
-			console.log("meter_value(): str.substr("+ i +", "+ n +") = "+ b);
-			return 0;
-		}
-		return a;
+	if(v == 0) {
+		meter_log.value = "ゼロだ";
+		return -1;
 	}
-	return a.mul(100);
+
+	return v.mul(100);
 }
 
 function meter_click() {
 	if(li == null) {
-		log.value += "まったくダメです";
+		errLog(log);
 		return;
 	}
-	var v = meter_value();
-	if(v == 0) {
-		meter_log.value += "ダメです";
+	var v = 0;
+	if(meter_input.value == "" || (v = meter_value()) <= 0) {
+		if(v == 0)
+			errLog(meter_log);
 		return;
 	}
 	var len = 0;
@@ -321,6 +358,7 @@ function meter_click() {
 			break;
 		}
 	}
+
 	var li_ = 0, bu_ = 0, zha_ = 0;
 	if(len == 0 || len == 1) {
 		if(len == 0) {
@@ -342,6 +380,8 @@ function meter_click() {
 	var lin_ = v.div(lin).floor();
 	v = v.sub((lin_.mul(lin)));
 	var hao_ = v.div(hao).floor();
+	v = v.sub((hao_.mul(hao)));
+	var si_ = v.div(si).floor();
 	var str = "";
 	if(len == 0 || len == 1) {
 		if(len == 0) {
@@ -363,7 +403,13 @@ function meter_click() {
 	if(lin_ != 0)
 		str += lin_ +'厘';
 	if(hao_ != 0)
-		str += hao_ +'毫';
+		str += hao_ +'毛';
+	if(si_ != 0)
+		str += si_ +'糸';
+	if(str.length == 0) {
+		if(si > v) 
+			str = '糸('+ r_li(si, 6) +') > '+ v;
+	}
 	meter_log.value = str;
 }
 
@@ -383,15 +429,31 @@ function lenChange() {
 	meter_click();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-	var i = 0;
-	for(let item of data) {
-		var opt = document.createElement("option");
-		opt.text = item.名;
-		opt.value = i++;
-		items.appendChild(opt);
-	}
-});
+var isMoji = false;
+function moji_focus() {
+var target = event.target;
+isMoji = event.relatedTarget != null && event.relatedTarget.id == "li_input" ? true : false;
+}
+function moji_click() {
+if(isMoji == false) return;
+var target = event.target;
+if(target.type == "button") {
+const start = li_input.selectionStart, end = li_input.selectionEnd;
+li_input.focus();
+li_input.setRangeText(target.value, start, end);
+li_input.selectionStart = start + 1;
+li_input.selectionEnd = start + 1;
+}
+}
+function li_focus() {
+var target = event.target;
+if(event.relatedTarget == null || event.relatedTarget.parentNode.id != "li_moji")
+	li_moji.style = "display: block;";
+}
+function li_blur() {
+if(event.relatedTarget == null || event.relatedTarget.parentNode.id != "li_moji")
+	li_moji.style = "display :none;";
+}
 </script>
 <style>
 body {
@@ -407,6 +469,7 @@ input[type="text"], select {
 height: 1.6em;
 box-sizing: content-box;
 padding: 1px 2px;
+margin-top: 1px;
 }
 input[type="radio"], input[type="checkbox"] {
 width: 1em;
@@ -446,6 +509,12 @@ footer {
 margin-top: 10px;
 text-align: center
 }
+#li_moji {
+display: none;
+position:absolute;
+top:-10px;
+left:2em;
+}
 </style>
 </head>
 <body>
@@ -460,17 +529,21 @@ text-align: center
 <label for="chang">長里 : <input type="checkbox" id="chang" onclick="changClick()"></label>
 </div>
 <div>
-<label for="cun_size">寸 : <input type="text" id="cun_size" size="8em" onchange="setLog();">cm</label>
-<label for="chi_size">尺 : <input type="text" id="chi_size" size="3em" onchange="setLog();">寸</label>
-<label for="bu_size">歩 : <input type="text" id="bu_size" size="3em" onchange="setLog();">尺</label>
+<label for="chi_size">尺 : <input type="text" id="chi_size" size="8em" onchange="setLog();">cm</label>
+<label for="cun_size">尺 : <input type="text" id="cun_size" size="2.5em" onchange="setLog();">寸</label>
+<label for="bu_size">歩 : <input type="text" id="bu_size" size="2.5em" onchange="setLog();">尺</label>
 <label for="li_size">里 : <input type="text" id="li_size" size="3em" onchange="setLog();">歩</label>
 </div>
 <div><label for="log">ログ : <input type="text" id="log" size="60em"></label></div>
 </article>
 <article>
 <h2>変換するんだ</h2>
-<div>単位に里歩尺寸分↓を合わせられる<br>
-<label for="li_input">里 : <input type="text" id="li_input" onkeydown="li_keydown(event)" value="萬二千餘里"><button onclick="li_click()">変換</button></label>
+<div style="position:relative;">
+単位に里歩尺寸分↓を合わせられる<br>
+<div id="li_moji" onfocusin="moji_focus()" onfocusout="moji_focus()"  onclick="moji_click()">
+<input type="button" value="里"><input type="button" value="歩"><input type="button" value="尺"><input type="button" value="寸"><input type="button" value="分"><input type="button" value="厘"><input type="button" value="毛">
+</div>
+<label for="li_input">里 : <input type="text" id="li_input" onfocus="li_focus()" onblur="li_blur()" onkeydown="li_keydown(event)"><button onclick="li_click()">変換</button></label>
 <label for="li_log">結果→<input type="text" id="li_log"></input></label><label for="li_auto">自動 : <input type="checkbox" id="li_auto" onchange="li_autoChange()">←入力で変換</label>
 </div>
 <div>
@@ -487,39 +560,50 @@ text-align: center
 <h2>メモ</h2>
 <table id="memo" border="1">
 <thead>
-<tr><th></th><th>寸cm</th><th>尺cm</th><th>歩cm</th><th>里m</th><th>長里m</th><th>m<sup>2</sup></th><th></th></tr>
+<tr><th></th><th>寸cm</th><th>尺cm</th><th>歩cm</th><th>里m</th><th>長里m</th><th></th></tr>
 </thead>
 <tbody>
-<tr><th>殷 手尺</th><td>2.0833</td><td>16.6666(8寸)</td><td>33.3333(2尺)</td><td></td><td></td><td></td><td></td></tr>
-<tr><th>殷 足歩</th><td>3.125</td><td>25(8寸)</td><td>75(3尺)</td><td>75(100跬)</td><td></td><td></td><td></td></tr>
-<tr><th>周 古尺</th><td>2.3125</td><td>18.5(8寸)</td><td>148(8尺)</td><td>74(50歩)</td><td>444(300歩)</td><td>2.1904</td><td>前11〜前9世紀</td></tr>
-<tr><th>春秋 尺</th><td>2.4125</td><td>19.3(8寸)</td><td>154.4(8尺)</td><td>77.2(50歩)</td><td>463.2(300歩)</td><td>2.383936</td><td>前8～前5世紀</td></tr>
-<tr><th>周 尺</th><td>2.25</td><td>22.5(10寸)</td><td>135(6尺)</td><td>67.5(50歩)</td><td>405(300歩)</td><td>1.8225</td><td>前?～前351年</td></tr>
-<tr><th>秦漢 尺</th><td>2.3125</td><td>23.125(10寸)</td><td>138.75(6尺)</td><td>69.375(50歩)</td><td>416.25(300歩)</td><td>1.9251</td><td>前350年、商鞅変法</td></tr>
-<tr><th>魏晋 尺</th><td>2.4125</td><td>24.125(10寸)</td><td>144.75(6尺)</td><td>72.375(50歩)</td><td>434.25(300歩)</td><td>2.095256</td><td></td></tr>
-<tr><th>東晋 尺</th><td>2.45</td><td>24.5(10寸)</td><td>147(6尺)</td><td>73.5(50歩)</td><td>441(300歩)</td><td></td><td></td></tr>
-<tr><th>隋 尺</th><td>2.96</td><td>29.6(10寸)</td><td>177.6(6尺)</td><td>88.8(50歩)</td><td>532.8(300歩)</td><td></td><td></td></tr>
-<tr><th>唐 小尺</th><td>3</td><td>30(10寸)</td><td>180(6尺)</td><td>90(50歩)</td><td>540(300歩)</td><td></td><td></td></tr>
-<tr><th>唐 大尺</th><td>3.6</td><td>36(10寸)</td><td>180(5尺)</td><td>90(50歩)</td><td>648(360歩)</td><td></td><td>武徳7年、624年</td></tr>
+<tr><th>殷 手尺</th><td>2.0833</td><td>16.6666(8寸)</td><td>33.3333(2尺)</td><td></td><td></td><td></td></tr>
+<tr><th>殷 足歩</th><td>3.125</td><td>25(8寸)</td><td>75(1跬)</td><td>75(100跬)</td><td></td><td></td></tr>
+<tr><th>殷 尺</th><td>2.1656</td><td>17.325(8寸)</td><td>138.6(8尺)</td><td>69.3(50歩)</td><td></td><td></td></tr>
+<tr><th>周 古尺</th><td>2.31</td><td>18.48(8寸)</td><td>147.84(8尺)</td><td>73.92(50歩)</td><td></td><td>前11〜前9世紀</td></tr>
+<tr><th>春秋 尺</th><td>2.4125</td><td>19.3(8寸)</td><td>154.4(8尺)</td><td>77.2(50歩)</td><td></td><td>前770?年～前453?年</td></tr>
+<tr><th>周 尺</th><td>2.25</td><td>22.5(10寸)</td><td>135(6尺)</td><td>67.5(50歩)</td><td>405(300歩)</td><td>春秋?～</td></tr>
+<tr><th>秦漢 尺</th><td>2.31</td><td>23.1(10寸)</td><td>138.6(6尺)</td><td>69.3(50歩)</td><td>415.8(300歩)</td><td>前350年 商鞅変法</td></tr>
+<tr><th>魏晋 尺</th><td>2.4187</td><td>24.1875(10寸)</td><td>145.125(6尺)</td><td>72.5625(50歩)</td><td>435.375(300歩)</td><td>222年? 魏杜虁尺</td></tr>
+<tr><th>東晋 尺</th><td>2.45</td><td>24.5(10寸)</td><td>147(6尺)</td><td>73.5(50歩)</td><td>441(300歩)</td><td>317年～420年</td></tr>
+<tr><th>隋 尺</th><td>2.96</td><td>29.6(10寸)</td><td>177.6(6尺)</td><td>88.8(50歩)</td><td>532.8(300歩)</td><td>581年～</td></tr>
+<tr><th>唐 大尺</th><td>3</td><td>30(10寸)</td><td>150(5尺)</td><td>75(50歩)</td><td>540(360歩)</td><td>武徳7年、624年</td></tr>
 </tbody>
 </table>
 <ul>
 <li>ひと足を跬(き)。ふた足を歩(ぶ)。1跬は3尺。1歩は6尺。100跬で1里。</li>
 <li>春秋期の歩は8尺、1畝(ほ・む)は100歩、1里は300歩。</li>
-<li>漢尺の6尺4寸は148cmで、周古尺の8尺と同じ。</li><!--周では8寸尺の8尺を1歩としていた。10寸尺の6尺4寸にあたる。-->
-<li>漢尺の8寸は18.5cmで、周古尺の1尺と同じ。</li><!--漢代の辞書『説文解字』によれば「周の1尺は8寸程度」-->
-<!--魏正始弩尺24.3cm-->
-<!--岡山藩の和意谷墓所造営の際は、和尺の六寸五分（約19.7cm）、井田では六寸四分（約19.4cm）を周尺一尺としたようです。-->
-<!--『孟子』巻５、滕文公篇「方里にして井、井は九百畝、其の中を公田と為す。八家は皆な百畝を私し、同に公田に養ひ、公事畢りて然る後に敢て私事を治す。」-->
+<li>周古尺の8尺は、漢尺の6尺4寸にあたる。</li><!--周では8寸尺の8尺を1歩としていた。10寸尺の6尺4寸にあたる。-->
+<li>周古尺の1尺は、漢尺の8寸程度。</li><!--漢代の辞書『説文解字』によれば「周の1尺は8寸程度」-->
+<!-- http://library.jsce.or.jp/jsce/open/00902/1992/12-0131.pdf
+周尺 22.5cm 「東洋學報 論說 古代中國の尺度について」 より 戦国大尺と名付けて説明している。小尺は8寸尺。
+商鞅変法 前350年 23.1cm
+新莽嘉量 始建国元年 9年 23.08865cm 劉歆 元始5年(5年)、三統暦を作った。
+後漢 慮俿銅尺 建初六年 81年 23.525cm
+魏杜虁尺 黄初(220-226)中期 24.12～24.255cm 調律用 比晋前尺一尺四分七厘(24.1857)。
+	188年まで雅楽郎。黄初(220-226)中期、太楽令および協律都尉となった。劉表が楽団で演奏しようとしたのを止めた人。
+魏正始弩尺 正始5年 244年 24.255cm
+劉徽 九章算術・商功 注釈 263年 24.19cm 王莽时刘歆斛尺弱于今尺四分五厘(1.08855)。比魏尺其斛深九寸五分五厘(23.10145)。
+荀勗晋前尺 泰始九年 273年 23.1cm 周尺と同一 新莽嘉量とほぼ同じ 劉歆銅斛尺と同じ 
+晋後尺 24.5cm 晋后尺实比晋前尺一尺六分二厘(24.5322)。元帝後に江東で用いた尺
+隋尺 27.4cm 調律用
+岡山藩の和意谷墓所造営の際は、和尺の六寸五分（約19.7cm）、井田では六寸四分（約19.4cm）を周尺一尺としたようです。 -->
 </ul>
 </article>
 <article>
 <h2>作成のメモ</h2>
-最初、周の表8尺180cmや、表8尺185cmを元に尺を出すツールを作り始めた。メートル変換する機能を付けて、漢数字にも対応した。<br>
+最初、周の表8尺180cmや、表8尺185cmを元に尺を出すツールを作り始めた。<br>
+メートル変換する機能を付けて、漢数字にも対応した。<br>
 魏尺はとりあえず193cmとし、春秋尺も同じとした。周古尺は漢尺との関係により185cmとした。<br>
 ついでに手尺足尺を加えて、殷尺は歩138.6cmとするのを元にした。<br>
-またついでに、唐尺は180cmで加えて、東晋の尺24.5cmと隋の尺29.6cmも加えた。<br>
-寸の計算式にある(8*10)とは、8は「8寸で1尺」、10は「10尺表」。(8*10)と逆なのは「10寸で1尺」「8尺表」となる。<br>
+またついでに、唐の大尺30cm、東晋の尺24.5cm、隋の尺29.6cmも加えた。<br>
+荀勗晋前尺との関係を元に調整。周古尺・秦漢尺・魏晋尺を変更した。
 </article>
 </main>
 <footer>
