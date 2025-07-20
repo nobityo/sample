@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
 <title>里・メートル 変換</title>
 <!--<script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.5.0/decimal.min.js"></script>-->
 <script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/14.2.1/math.min.js"></script>
@@ -322,7 +323,7 @@ function li_click() {
 function meter_value() {
 	var v;
 	try {
-		 v = math.evaluate(meter_input.value);
+		 v = math.evaluate(meter_input.value, {chi: chi});
 	} catch(e) {
 		meter_log.value = e.message;
 		return -1;
@@ -330,6 +331,7 @@ function meter_value() {
 	if(v.type == "Unit") {
 		v = v.value;
 	} else if(v.type != "BigNumber"){
+		console.log("value.type = "+ v.type);
 		return 0;
 	}
 	if(v == 0) {
